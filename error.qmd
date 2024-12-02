@@ -119,11 +119,11 @@ data_combined
 #| label: figure-pop-change
 #| echo: true
 #| output: true
-pop_fig <- ggplot(data_combined) |>
+pop_fig <- ggplot(data_combined) +
   geom_sf(aes(fill = pop_change)) +
   scale_fill_gradient2(
     low = "red", mid = "white", high = "green",
-    midpoint = 0, labels = percent
+    midpoint = 0, labels = scales::percent
   ) +
   labs(
     title = "Population Growth in ACS (2013-2017 to 2018-2022)",
@@ -132,6 +132,7 @@ pop_fig <- ggplot(data_combined) |>
   theme_minimal()
 
 pop_fig
+ggsave("fixed-pop-change.png", pop_fig, width = 8, height = 6, dpi = 300)
 # Save the figure using ggsave
 # ggsave("fixed-pop-change.png", pop_fig)
 ```
@@ -153,9 +154,21 @@ dim(data_error)[1] == 0 # Should return TRUE
 
 ```{r}
 # Calculate the ratio of over65 to DI recipients
-ratio_data <- social_geo_data |>
-    mutate(over65Share = (Over65 / pop_2018_2022)) |>
-    mutate(disabledShare = (DisabledWorkers / pop_2018_2022))
+#Removed the "," so that the data can be run as a numerical value instead of as a character. 
+social_geo_data <- social_geo_data %>%
+     mutate(
+        Over65 = as.numeric(gsub(",", "", Over65)),
+        DisabledWorkers = as.numeric(gsub(",", "", DisabledWorkers)),
+        pop_2018_2022 = as.numeric(gsub(",", "", pop_2018_2022))
+    )
+# Calculate the ratio of over65 to DI recipients
+#changed the format 
+ratio_data <- social_geo_data %>%
+  mutate(
+    over65Share = (Over65 / pop_2018_2022),
+    disabledShare = (DisabledWorkers / pop_2018_2022)
+  )
+
 
 # Calculate the state totals
 state_totals <- social_geo_data |>
@@ -175,21 +188,25 @@ ratio_data <- ratio_data |>
 ### Make the Plot
 
 ```{r}
+#because the values were so similar we need to specify the limits more so that they work with the color scale.
 #| label: figure-ratio
 #| echo: true
 #| output: true
-relative_plot <- ggplot(ratio_data) %>% 
-    geom_sf(aes(fill=double_ratio)) +
-    scale_fill_gradient2(
-        low = "red", mid = "white", high = "green"
-    ) +
-    labs(
-        title = "Relative Population Share DI to OASI to State Average",
-        fill = "Ratio of Disabled to Over 65"
-    ) +
-    theme_minimal()
+relative_plot <- ggplot(ratio_data) +
+  geom_sf(aes(fill = double_ratio)) +
+  scale_fill_gradient2(
+    low = "red", mid = "white", high = "green",
+    midpoint = 0.3,  
+    limits = c(0.23, 0.39)  
+  ) +
+  labs(
+    title = "Relative Population Share DI to OASI to State Average",
+    fill = "Ratio of Disabled to Over 65"
+  ) +
+  theme_minimal()
 
 relative_plot
+ggsave("fixed-figure-ratio.png", relative_plot, width = 8, height = 6, dpi = 300)
 # Save the figure using ggsave
 # ggsave("fixed-ratio.png", relative_plot)
 ```
